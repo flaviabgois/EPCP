@@ -8614,7 +8614,7 @@ async function eqFotoShare(f,name,tag){ try{ var b=await (await fetch(f)).blob()
 function plCv(pg,x,y){ var p=(REF.plantas.pages||[])[pg]; if(!p) return null; var c=p.crop; if(!c) return {x:x,y:y};
   var vx=(x-c[0])/(c[2]-c[0]), vy=(y-c[1])/(c[3]-c[1]); return (vx<0||vx>1||vy<0||vy>1)?null:{x:vx,y:vy}; }
 function plCvInv(pg,x,y){ var c=(REF.plantas.pages[pg]||{}).crop; if(!c) return {x:x,y:y}; return {x:c[0]+x*(c[2]-c[0]), y:c[1]+y*(c[3]-c[1])}; }
-function plDisp(pg){ return !ST.offline || !!(ST.plLite||{})[(REF.plantas.pages[pg]||{}).id]; }
+function plDisp(pg){ return !ST.offline || !!window.__PF_BLOBX || !!(ST.plLite||{})[(REF.plantas.pages[pg]||{}).id]; }
 function plantaPos(tag){ var P=REF.plantas||{pages:[],pos:{}}, o=[], m=(ST.locacao||{})[tag], v;
   if(m && P.pages[m.pg] && plDisp(m.pg) && (v=plCv(m.pg,m.x,m.y))) o.push({pg:m.pg, x:v.x, y:v.y, manual:true});
   if(o.length) return o;   /* um projeto por equipamento: a marcação manual prevalece */
@@ -8665,7 +8665,7 @@ function plLoad(center){ var P=REF.plantas, p=P.pages[PL.pg], img=$('plImg'), vp
   $('plMsg').textContent='Carregando a planta…';
   img.onload=function(){ PL.k=img.naturalWidth/(p.w||img.naturalWidth); PL.min=Math.min(vp.clientWidth/img.naturalWidth, vp.clientHeight/img.naturalHeight); plLabels(); plMarker(); if(center) plCentro(); plMsgUpd(); };
   img.onerror=function(){ $('plMsg').textContent='Não foi possível abrir esta planta'+(ST.offline?' nesta cópia: o HTML baixado leva só as plantas onde há equipamento localizado.':'.'); };
-  img.src=ST.offline ? ((ST.plLite||{})[p.id]||'') : p.src; }
+  img.src=(ST.offline && !window.__PF_BLOBX) ? ((ST.plLite||{})[p.id]||'') : p.src; }
 /* 10/11: nomes que não existem no desenho (ex.: PN-UR-12001A/B na sala de HVAC 01) — REF.plantas.lbl[página] = [[x, y, texto]] */
 function plLabels(){ var w=$('plWrap'), img=$('plImg'); if(!w||!img) return; w.querySelectorAll('.pl-lbl').forEach(function(e){ e.remove(); });
   ((REF.plantas.lbl||{})[PL.pg]||[]).forEach(function(l){ var v=plCv(PL.pg,l[0],l[1])||{x:l[0],y:l[1]}, e=document.createElement('span'); e.className='pl-lbl'; e.textContent=l[2];
@@ -9827,7 +9827,7 @@ function cabPlanoPdf(code, alvo){ var x=cabRows().filter(function(y){ return y.c
   var desenha=async function(){ var fl=Object.keys(D.fl).filter(function(k){ return D.fl[k]===st.pg; })[0]||String(st.pg);
     $('cbPdfFl').textContent=(fl==='CAPA'?'capa':'folha '+fl+' de '+D.pages)+(st.pg===A.pg?'':' · (o circuito está na folha '+A.fl+')');
     $('cbPdfAbrir').href=D.arq+'#page='+st.pg; $('cbPdfAnt').disabled=st.pg<=1; $('cbPdfPro').disabled=st.pg>=D.pages;
-    if(ST.offline){ $('cbPdfMsg').innerHTML='Na cópia offline o PDF do plano de cortes não vem junto. Abra a plataforma pelo link para ver o documento.'; return; }
+    if(ST.offline && !window.__PF_BLOBX){ $('cbPdfMsg').innerHTML='Na cópia offline o PDF do plano de cortes não vem junto. Abra a plataforma pelo link para ver o documento.'; return; }
     try{ var lib=await ftLoadPdfJs(); if(!CB_PDF[A.doc]) CB_PDF[A.doc]=lib.getDocument(D.arq).promise; var pdf=await CB_PDF[A.doc]; if(!cabPdfModal) return;
       var page=await pdf.getPage(st.pg), box=$('cbPdfB'), base=page.getViewport({scale:1}), s=Math.max(0.6, (box.clientWidth-32)/base.width)*st.zoom, vp=page.getViewport({scale:s}), dpr=window.devicePixelRatio||1, cv=$('cbPdfCv');
       cv.width=Math.floor(vp.width*dpr); cv.height=Math.floor(vp.height*dpr); cv.style.width=Math.floor(vp.width)+'px'; cv.style.height=Math.floor(vp.height)+'px';
